@@ -2,6 +2,7 @@
 #include <avr/power.h> //Needed for powering down perihperals such as the ADC/TWI and Timers
 #include <TimerOne.h>  //Needed for display
 
+//  http://schueler.bulme.at/~philipp.gretzl/
 
 //#define DEBUG 1
 #ifdef DEBUG
@@ -38,17 +39,6 @@ const uint8_t digPin[5] {6, 9, 10, 11, 5};
 #define downBtn 12
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// #define STRATEGY_DEFINES
-#ifdef STRATEGY_DEFINES
-#define actSeg(seg,act) digitalWrite((seg), (act))
-#define actDig(dig,act) digitalWrite((dig), !(act))
-#define initSeg(seg)   pinMode(seg,OUTPUT); actSeg(seg,LOW));
-#define initDig(dig)   pinMode(dig,OUTPUT); actDig(dig,LOW));
-
-
-//#define actSeg(seg,act) digitalWrite((seg), !(act))
-//#define actSeg(dig,act) digitalWrite((dig), (act))
-#else
 void actSeg(uint8_t seg, bool act) {
   digitalWrite((seg), (act));
 }
@@ -63,7 +53,6 @@ void  initDig(uint8_t dig)   {
   pinMode(dig, OUTPUT);
   actDig(dig, LOW);
 }
-#endif
 
 //###################################################
 
@@ -176,6 +165,13 @@ void setup() {
 
   //start display at this point
   Old = millis();
+
+  drawPoints('.');
+  digWrite(0, 'V');
+  digWrite(1, '1');
+  digWrite(2, '1');
+  digWrite(3, ' ');
+  delay(1000);
 }
 
 //############################################
@@ -197,11 +193,7 @@ void loop() {
         setTime();
         break;
       case 2:
-        drawPoints(' ');
-        digWrite(0, '-');
-        digWrite(1, 'P');
-        digWrite(2, 'G');
-        digWrite(3, '-');
+        displaySettings();
         break;
       case 3:
         menuState = 0;
@@ -290,7 +282,14 @@ void checkAll()
 void writeTime()
 {
   drawPoints(':');
-  digWrite(0, (hours / 10));
+  if (hours / 10 != 0)
+  {
+    digWrite(0, (hours / 10));
+  }
+  else
+  {
+    digWrite(0, ' ');
+  }
   digWrite(1, (hours % 10));
   digWrite(2, (minutes / 10));
   digWrite(3, (minutes % 10));
@@ -348,6 +347,51 @@ void setTime()
       }
       break;
     case 3:
+      menuState = menusubState = 0;
+      break;
+  }
+  if (btnSelect)
+  {
+    menusubState++;
+  }
+}
+
+
+
+void displaySettings()
+{
+  switch (menusubState)
+  {
+    case 0:
+      drawPoints(' ');
+      digWrite(0, 'D');
+      digWrite(1, 'I');
+      digWrite(2, 'S');
+      digWrite(3, 'P');
+      break;
+    case 1:
+      //set minutes
+      drawPoints(':');
+      digWrite(0, 'D');
+      digWrite(1, 'B');
+      digWrite(2, ' ');
+      digWrite(3, darkPhase);
+      if (btnUp)
+      {
+        if (darkPhase < 5)
+        {
+          darkPhase++;
+        }
+      }
+      if (btnDown)
+      {
+        if (darkPhase > 3)
+        {
+          darkPhase--;
+        }
+      }
+      break;
+    case 2:
       menuState = menusubState = 0;
       break;
   }
