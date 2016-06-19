@@ -7,10 +7,8 @@
 //#define DEBUG 1
 #ifdef DEBUG
 #define debugWrite(s) Serial.println((s))
-
 #else
 #define debugWrite(s)
-
 #endif
 
 //++++segment-parts++++
@@ -22,21 +20,14 @@
 #define segF A0
 #define segG 8
 
-//++++display-select++++
-//all of them are PWM
-/*#define d1 6
-#define d2 9
-#define d3 10
-#define d4 11
-#define points 5  //because pwm*/
-
+//++++display-select-pins++++
 const uint8_t digPin[5] {6, 9, 10, 11, 5};
 
 //++++BTNs++++++++++++
 //you can use pin 2 and 3 for the BTN for wake up from sleep
-#define selBtn 2
-#define upBtn 13
-#define downBtn 12
+#define selBtnPin 2
+#define upBtnPin 13
+#define downBtnPin 12
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void actSeg(uint8_t seg, bool act) {
@@ -56,43 +47,33 @@ void  initDig(uint8_t dig)   {
 
 //###################################################
 
-long seconds = 0;
-int minutes = 11;
-int hours = 15;
+unsigned long seconds = 0;
+uint8_t minutes = 11;
+uint8_t hours = 15;
 
-volatile long Old;
-volatile long Now;
+volatile unsigned long Old;
+volatile unsigned long Now;
 int menuState = 0;
 int menusubState = 0;
-int i;          //for-loops
+
 bool displayOn = true;
-bool allwaysOn = false;
-unsigned int startTime;
-unsigned int stopTime;
 
 //+++++++debounce++++++++++++++
 #define debounceDelay 50
-bool upB;
-bool downB;
-bool selectB;
-bool selbtnState[2] {LOW, LOW};
-long lastDebounceSel;
-bool upbtnState[2] {LOW, LOW};
-long lastDebounceUp;
-bool downbtnState[2] {LOW, LOW};
-long lastDebounceDown;
-
+//#define PAPI 1
 
 //+++++++++logic use buttons++++++++++++
-bool btnUp;
-bool btnWasUp;
+/*bool btnUp;
 bool btnDown;
-bool btnWasDown;
-bool btnSelect;
-bool btnWasSelect;
+bool btnSelect;*/
 
 
-#define onTime 4000  //4 seconds is the display on
+#ifdef DEBUG
+#define onTime 10000  //10 seconds is the display on
+#else
+#define onTime 3000  //3 seconds is the display on
+#endif
+
 #define interruptTime 1000 //1000000
 
 #define brightTicks 1   // bright phase, leave 1
@@ -107,8 +88,7 @@ static uint8_t darkPhase = darkTicks;
 //  1:5: 1,2mA per segment -> 7,5mA max
 
 
-//for display
-
+//display buffer
 volatile char displayOut[5];
 
 
@@ -129,15 +109,10 @@ void setup() {
   Serial.println("My Watchg test");
 #endif
 
-  for (i = 0; i < 5; i++)
+  for (int i = 0; i < 5; i++)
   {
     initDig(digPin[i]);
   }
-  /*initDig(d1);
-  initDig(d2);
-  initDig(d3);
-  initDig(d4);
-  initDig(points);*/
 
   initSeg(segA);
   initSeg(segB);
@@ -149,13 +124,11 @@ void setup() {
 
   //buttons****
 
-  pinMode(selBtn, INPUT_PULLUP); //This is the main button, tied to INT0
+  pinMode(selBtnPin, INPUT_PULLUP); //This is the main button, tied to INT0
   // digitalWrite(selBtn, HIGH); //Enable internal pull up on button
-
-  pinMode(upBtn, INPUT_PULLUP);
+  pinMode(upBtnPin, INPUT_PULLUP);
   // digitalWrite(upBtn, HIGH); //Enable internal pull up on button
-
-  pinMode(downBtn, INPUT_PULLUP);
+  pinMode(downBtnPin, INPUT_PULLUP);
   //digitalWrite(downBtn, HIGH); //Enable internal pull up on button
 
   POWER_DOWN();
@@ -164,17 +137,30 @@ void setup() {
   Timer1.attachInterrupt(displayR);
 
   //start display at this point
-  Old = millis();
+  Now = Old = millis();
 
-  drawPoints('.');
+  /*drawPoints('.');
   digWrite(0, 'V');
-  digWrite(1, '1');
-  digWrite(2, '1');
+  digWrite(1, '2');
+  digWrite(2, '0');
   digWrite(3, ' ');
-  delay(1000);
+  delay(1000);*/
 }
 
 //############################################
+#include "debounce.h"  //Needed for debounce
+Btn upBtn(upBtnPin , 250);
+Btn downBtn(downBtnPin , 250);
+Btn selBtn(selBtnPin);
+
+
+void debounce()
+{
+  upBtn.debounce(Now);
+  downBtn.debounce(Now);
+  selBtn.debounce(Now);
+}
+
 
 void loop() {
   checkAll();
@@ -202,74 +188,41 @@ void loop() {
   }
 }
 
-/*void stopwatch()
-{
-  switch (menusubState)
-  {
-    case 0:
-      drawPoints(' ');
-      digWrite(0, 'S');
-      digWrite(1, 'T');
-      digWrite(2, 'O');
-      digWrite(3, 'P');
-      break;
-    case 1:
-      allwaysOn = true;
-      startTime = Now;
-      menusubState++;
-      break;
-    case 2:           //does not work
-      stopTime = Now - startTime;
-      drawPoints(':');
-      i = stopTime / 1000;
-      digWrite(1, (i / 60) / 10);
-      digWrite(2, (i / 60) % 10);
-      digWrite(3, (i % 60) / 10);
-      digWrite(4, (i % 60) % 10);
-      break;
-    case 3:
-      allwaysOn = false;
-      drawPoints(':');
-      i = stopTime / 1000;
-      digWrite(1, (i / 60) / 10);
-      digWrite(2, (i / 60) % 10);
-      digWrite(3, (i % 60) / 10);
-      digWrite(4, (i % 60) % 10);
-      break;
-    case 4:
-      menusubState = 0;
-      break;
-  }
-
-  if (btnSelect)
-  {
-    menusubState++;
-  }
-
-}*/
-
 void checkAll()
 {
   debugWrite("checkAll");
-  if (Now >= Old + onTime && !allwaysOn)
+
+  Now = millis();
+  debounce();
+
+  if (upBtn.pulse() || downBtn.pulse() || selBtn.pulse())
+  {
+    Old = Now;
+  }
+  else
+  {
+    delay(debounceDelay);
+  }
+
+
+  if (Now >= Old + onTime)
   {
     debugWrite("checkAll->sleep");
     displayOn = false;
     enterSleepMode();
     debugWrite("checkAll->wake up");
-    return;
+    Old = Now = millis();
+    return;     // return to mai-loop
   }
-
-  debounce();
 
 
   if (menusubState == 0)
   {
-    if (btnDown)
+    if (downBtn.pulse())
     {
       menuState++;
     }
-    if (btnUp)
+    if (upBtn.pulse())
     {
       menuState--;
     }
@@ -281,7 +234,7 @@ void checkAll()
 //++++++++++++++++++++++++++++++++++
 void writeTime()
 {
-  drawPoints(':');
+  drawPoints(((Now / 500) % 2) ? ':' : ' ');
   if (hours / 10 != 0)
   {
     digWrite(0, (hours / 10));
@@ -311,33 +264,31 @@ void setTime()
       drawPoints(':');
       digWrite(0, '-');
       digWrite(1, '-');
-      digWrite(2, (minutes % 60) / 10);
-      digWrite(3, (minutes % 60) % 10);
-      if (btnUp)
+      digWrite(2, minutes / 10);
+      digWrite(3, minutes % 10);
+      if (upBtn.pulse())
       {
-        minutes = (minutes - 1) % 60;
+        if (minutes > 0) minutes = minutes - 1;
+        else minutes = 59;
       }
-      if (btnDown)
+      if (downBtn.pulse())
       {
         minutes = (minutes + 1) % 60;
-      }
-      if (minutes < 0)
-      {
-        minutes = 60;
       }
       break;
     case 2:
       //set hours
       drawPoints(':');
-      digWrite(0, (hours % 60) / 10);
-      digWrite(1, (hours % 60) % 10);
+      digWrite(0, hours  / 10);
+      digWrite(1, hours  % 10);
       digWrite(2, '-');
       digWrite(3, '-');
-      if (btnUp)
+      if (upBtn.pulse())
       {
-        hours = (hours - 1) % 24;
+        if (hours > 0) hours = hours - 1;
+        else hours = 23;
       }
-      if (btnDown)
+      if (downBtn.pulse())
       {
         hours = (hours + 1) % 24;
       }
@@ -350,13 +301,11 @@ void setTime()
       menuState = menusubState = 0;
       break;
   }
-  if (btnSelect)
+  if (selBtn.pulse())
   {
     menusubState++;
   }
 }
-
-
 
 void displaySettings()
 {
@@ -376,16 +325,16 @@ void displaySettings()
       digWrite(1, 'B');
       digWrite(2, ' ');
       digWrite(3, darkPhase);
-      if (btnUp)
+      if (downBtn.pulse())
       {
         if (darkPhase < 5)
         {
           darkPhase++;
         }
       }
-      if (btnDown)
+      if (upBtn.pulse())
       {
-        if (darkPhase > 3)
+        if (darkPhase > 2)
         {
           darkPhase--;
         }
@@ -395,7 +344,7 @@ void displaySettings()
       menuState = menusubState = 0;
       break;
   }
-  if (btnSelect)
+  if (selBtn.pulse())
   {
     menusubState++;
   }
