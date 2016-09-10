@@ -6,6 +6,7 @@ The goal was to make a watch with a very low power consumtion.
 
 Hardware
 --------
+It's based on a ATmega328PU, a single CR2032-cell, some buttons, some capacitors, a resistor and a 4-digit 7-segment-display like [this](https://www.neuhold-elektronik.at/datenblatt/N1021.pdf). 
 
 Low-Power
 ---------
