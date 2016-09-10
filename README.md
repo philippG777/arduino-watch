@@ -1,7 +1,11 @@
 Arduino-Watch
 =============
 
-This is my little arduino-watch.
+This is my little 7 segment arduino-watch.
+The goal was to make a watch with a very low power consumtion.
+
+Hardware
+--------
 
 Low-Power
 ---------
