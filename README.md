@@ -9,8 +9,10 @@ Hardware
 
 Low-Power
 ---------
->The Arduino bootloader is changed, it now uses ~1.2µA in sleep-mode.
-The brown-out-detector is disabled.
+I use a [standalone Arduino](https://www.arduino.cc/en/Tutorial/ArduinoToBreadboard) with a watch-crystal.
+I disabled the brown-out-detector in the bootloader for a lower powerconsumtion.
+Because of the modified bootloader, the watch has a powerconsumtion of around 1.2µA in sleepmode.
+The standard booloader has a powerconsumtion of about 16µA.
 
 Version History
 ---------------
