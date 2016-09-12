@@ -13,7 +13,7 @@ Low-Power
 I use a [standalone Arduino](https://www.arduino.cc/en/Tutorial/ArduinoToBreadboard) with a watch-crystal.
 I disabled the brown-out-detector in the bootloader for a lower powerconsumtion.
 Because of the modified bootloader, the watch has a powerconsumtion of around 1.2µA in sleepmode.
-The standard booloader has a powerconsumtion of about 16µA.
+The standard bootloader has a powerconsumtion of about 16µA.
 
 Version History
 ---------------
